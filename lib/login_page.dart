@@ -16,20 +16,27 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
 
   Future<int?> login(String email, String password) async {
-    final url = Uri.parse('http://3.0.151.126/api/admin/penggunas');
+    String? nextUrl = 'http://3.0.151.126/api/admin/penggunas';
     try {
-      final response = await http.get(url);
-      print('Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        final List users = jsonResponse['data']; // Ambil list user dari key 'data'
-        for (var user in users) {
-          if (user['email'] == email &&
-              user['password'] == password &&
-              user['role'] == 'guru') { // hanya role guru
-            return user['id']; // Kembalikan userId
+      while (nextUrl != null) {
+        final url = Uri.parse(nextUrl);
+        final response = await http.get(url);
+        print('Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> jsonResponse = json.decode(response.body);
+          final List users = jsonResponse['data'];
+          for (var user in users) {
+            if (user['email'] == email &&
+                user['password'] == password &&
+                user['role'] == 'guru') {
+              return user['id'];
+            }
           }
+          // Ambil next dari links
+          nextUrl = jsonResponse['links'] != null ? jsonResponse['links']['next'] : null;
+        } else {
+          break;
         }
       }
     } catch (e) {
