@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:guru/detail_presensi.dart';
+import 'package:guru/presensi/detail_presensi.dart';
+import 'package:guru/quiz/detail_quiz.dart';
 
-class PresensiPage extends StatefulWidget {
-  const PresensiPage({super.key});
+class QuizPage extends StatefulWidget {
+  const QuizPage({super.key});
 
   @override
-  State<PresensiPage> createState() => _PresensiPageState();
+  State<QuizPage> createState() => _QuizPageState();
 }
 
-class _PresensiPageState extends State<PresensiPage> {
+class _QuizPageState extends State<QuizPage> {
   String? selectedKelas;
   String? selectedMapel;
 
@@ -57,7 +58,7 @@ class _PresensiPageState extends State<PresensiPage> {
                       const Expanded(
                         child: Center(
                           child: Text(
-                            'PRESENSI',
+                            'QUIZ',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -157,7 +158,7 @@ class _PresensiPageState extends State<PresensiPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => DetailPresensiPage(
+                                      builder: (context) => DetailQuiz(
                                         kelas: selectedKelas!,
                                         mapel: selectedMapel!,
                                       ),
