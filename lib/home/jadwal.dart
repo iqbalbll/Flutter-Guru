@@ -119,7 +119,10 @@ class JadwalWidget extends StatelessWidget {
       margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(screenWidth * 0.08),
+          bottomLeft: Radius.circular(screenWidth * 0.08),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.3),
