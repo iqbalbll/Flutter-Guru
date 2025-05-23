@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage> {
 
                   // Logo kiri atas
                   Positioned(
-                    top: 0,
+                    top: 15,
                     left: 0,
                     child: Image.asset(
                       "assets/images/logo2.png",
