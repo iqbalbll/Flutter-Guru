@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailPresensiPage extends StatefulWidget {
   final String kelas;
@@ -16,6 +19,122 @@ class DetailPresensiPage extends StatefulWidget {
 
 class _DetailPresensiPageState extends State<DetailPresensiPage> {
   bool isPresensiDibuka = false;
+  String waktuText = '';
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchJadwal();
+  }
+
+  Future<void> fetchJadwal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      // Get guru_id from pengguna_id
+      final penggunaId = prefs.getInt('pengguna_id');
+
+      // Debug prints
+      print('Debug - Token: $token');
+      print('Debug - Pengguna ID: $penggunaId');
+      print('Debug - Selected Kelas: ${widget.kelas}');
+      print('Debug - Selected Mapel: ${widget.mapel}');
+
+      if (token == null || penggunaId == null) {
+        setState(() {
+          waktuText = 'User belum login';
+          isLoading = false;
+        });
+        return;
+      }
+
+      // First, get guru data to get guru_id
+      final guruResponse = await http.get(
+        Uri.parse('http://3.0.151.126/api/admin/guru'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (guruResponse.statusCode != 200) {
+        setState(() {
+          waktuText = 'Gagal mengambil data guru';
+          isLoading = false;
+        });
+        return;
+      }
+
+      final guruData = json.decode(guruResponse.body)['data'] as List;
+      final guru = guruData.firstWhere(
+        (item) => item['pengguna_id'] == penggunaId,
+        orElse: () => null,
+      );
+
+      if (guru == null) {
+        setState(() {
+          waktuText = 'Data guru tidak ditemukan';
+          isLoading = false;
+        });
+        return;
+      }
+
+      final guruId = guru['id'];
+      print('Debug - Guru ID: $guruId');
+
+      // Now get jadwal data
+      final jadwalResponse = await http.get(
+        Uri.parse('http://3.0.151.126/api/admin/jadwal-pelajarans'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (jadwalResponse.statusCode == 200) {
+        final data = json.decode(jadwalResponse.body)['data'] as List;
+        print('Debug - Jadwal Data: $data');
+
+        final jadwal = data.firstWhere((item) {
+          print('Checking jadwal item: $item');
+          print(
+            'Comparing with: guruId=$guruId, kelas=${widget.kelas}, mapel=${widget.mapel}',
+          );
+
+          return item['guru_id'] == guruId &&
+              item['kelas_id'].toString() == widget.kelas &&
+              item['mapel_id'].toString() == widget.mapel;
+        }, orElse: () => null);
+
+        if (jadwal != null) {
+          final jamMulai = jadwal['jam_mulai'].toString().substring(0, 5);
+          final jamSelesai = jadwal['jam_selesai'].toString().substring(0, 5);
+          setState(() {
+            waktuText = '$jamMulai - $jamSelesai';
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            waktuText = 'Jadwal tidak ditemukan';
+            isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          waktuText = 'Gagal mengambil jadwal';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Debug - Error: $e');
+      setState(() {
+        waktuText = 'Terjadi error: $e';
+        isLoading = false;
+      });
+    }
+  }
 
   void togglePresensi() {
     setState(() {
@@ -130,7 +249,9 @@ class _DetailPresensiPageState extends State<DetailPresensiPage> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              const Text('Jadwal  : hari (jam ke-kam ke)'),
+                              isLoading
+                                  ? const CircularProgressIndicator()
+                                  : //Text('Waktu    : $waktuText'),
                               Text('Kelas    : ${widget.kelas}'),
                               const SizedBox(height: 10),
                               Row(
